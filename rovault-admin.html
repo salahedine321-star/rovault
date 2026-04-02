@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoVault Admin Panel</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,Arial,sans-serif; background:#0f0520; color:#e2e8f0; min-height:100vh; }
+.header { background:linear-gradient(135deg,#1a0a2e,#2d1b69); padding:16px 24px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(124,58,237,0.3); position:sticky; top:0; z-index:100; }
+.header h1 { font-size:20px; font-weight:900; color:#a78bfa; }
+.header-right { display:flex; align-items:center; gap:12px; }
+.save-btn { background:#7c3aed; color:white; border:none; border-radius:10px; padding:10px 20px; font-size:14px; font-weight:700; cursor:pointer; }
+.save-btn:hover { background:#6d28d9; }
+.last-saved { font-size:12px; color:rgba(255,255,255,0.4); }
+.container { max-width:1100px; margin:0 auto; padding:24px 20px; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+@media(max-width:768px) { .grid { grid-template-columns:1fr; } }
+.card { background:rgba(255,255,255,0.05); border:1px solid rgba(124,58,237,0.2); border-radius:16px; padding:20px; }
+.card h2 { font-size:15px; font-weight:700; color:#a78bfa; margin-bottom:16px; }
+.card-full { grid-column:1/-1; }
+.field { margin-bottom:14px; }
+.field label { display:block; font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:6px; font-weight:600; }
+.field input[type="text"], .field select, .field textarea { width:100%; background:rgba(255,255,255,0.08); border:1px solid rgba(124,58,237,0.3); border-radius:8px; padding:10px 12px; color:white; font-size:13px; outline:none; font-family:-apple-system,Arial,sans-serif; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color:#7c3aed; }
+.field textarea { min-height:60px; resize:vertical; }
+.field select option { background:#1a0a2e; }
+.toggle-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+.toggle-row:last-child { border-bottom:none; }
+.toggle-info { flex:1; }
+.toggle-label { font-size:13px; color:rgba(255,255,255,0.85); font-weight:600; }
+.toggle-desc { font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px; }
+.toggle { position:relative; width:44px; height:24px; flex-shrink:0; }
+.toggle input { opacity:0; width:0; height:0; }
+.slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#333; border-radius:24px; transition:.3s; }
+.slider:before { position:absolute; content:""; height:18px; width:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:.3s; }
+input:checked + .slider { background:#7c3aed; }
+input:checked + .slider:before { transform:translateX(20px); }
+.btn-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.preset-btn { background:rgba(124,58,237,0.15); border:1px solid rgba(124,58,237,0.3); color:#a78bfa; border-radius:8px; padding:7px 12px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.preset-btn:hover { background:rgba(124,58,237,0.3); }
+.preset-btn.orange { background:rgba(249,115,22,0.15); border-color:rgba(249,115,22,0.3); color:#fb923c; }
+.preset-btn.green { background:rgba(34,197,94,0.15); border-color:rgba(34,197,94,0.3); color:#4ade80; }
+.preset-btn.red { background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.3); color:#f87171; }
+.status { padding:10px 14px; border-radius:8px; font-size:13px; margin-top:12px; display:none; }
+.status.success { background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:#86efac; display:block; }
+.range-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.range-row input[type="range"] { flex:1; accent-color:#7c3aed; }
+.range-val { font-size:13px; font-weight:700; color:#a78bfa; min-width:80px; text-align:right; }
+.tab-bar { display:flex; gap:4px; margin-bottom:20px; background:rgba(255,255,255,0.05); padding:4px; border-radius:12px; }
+.tab { flex:1; padding:10px; border:none; background:transparent; color:rgba(255,255,255,0.5); font-size:13px; font-weight:600; cursor:pointer; border-radius:8px; }
+.tab.active { background:#7c3aed; color:white; }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+.json-preview { background:rgba(0,0,0,0.3); border:1px solid rgba(124,58,237,0.2); border-radius:8px; padding:14px; font-family:monospace; font-size:12px; color:#a78bfa; white-space:pre-wrap; max-height:300px; overflow-y:auto; margin-top:12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔐 RoVault Admin</h1>
+  <div class="header-right">
+    <span class="last-saved" id="lastSaved">Not saved yet</span>
+    <button class="save-btn" onclick="saveConfig()">💾 Save & Download</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tab-bar">
+    <button class="tab active" onclick="showTab('monetization',this)">💰 Claim</button>
+    <button class="tab" onclick="showTab('ads',this)">📺 Ads</button>
+    <button class="tab" onclick="showTab('content',this)">📢 Content</button>
+    <button class="tab" onclick="showTab('app',this)">⚙️ App</button>
+    <button class="tab" onclick="showTab('preview',this)">👁️ Preview</button>
+  </div>
+
+  <!-- CLAIM TAB -->
+  <div id="tab-monetization" class="tab-content active">
+    <div class="grid">
+      <div class="card">
+        <h2>🎯 Claim Button</h2>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Claim Button Enabled</div>
+            <div class="toggle-desc">Shows after quiz completion</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="claimButtonEnabled" checked><span class="slider"></span></label>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Claim Button URL</label>
+          <input type="text" id="claimButtonURL" value="https://checkmyapp.site/cl/i/9vvndr">
+        </div>
+        <div class="field">
+          <label>Button Text</label>
+          <input type="text" id="claimButtonText" value="🎁 Claim Your Reward!">
+        </div>
+        <div class="field">
+          <label>Show On Screen</label>
+          <select id="claimButtonScreen">
+            <option value="quiz">After Quiz Only</option>
+            <option value="earn">Earn Screen Only</option>
+            <option value="all">All Screens</option>
+          </select>
+        </div>
+        <div class="btn-row">
+          <button class="preset-btn" onclick="document.getElementById('claimButtonURL').value='https://checkmyapp.site/cl/i/9vvndr'">OGAds Locker</button>
+          <button class="preset-btn" onclick="document.getElementById('claimButtonURL').value='https://rovault.xyz'">RoVault Home</button>
+          <button class="preset-btn" onclick="document.getElementById('claimButtonURL').value='https://apps.apple.com'">App Store</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🎯 OGAds Settings</h2>
+        <div class="field">
+          <label>OGAds Locker URL</label>
+          <input type="text" id="ogAdsURL" value="https://checkmyapp.site/cl/i/9vvndr">
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Show on Earn Screen</div>
+            <div class="toggle-desc">Complete Offer button</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="ogAdsEnabled" checked><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Show After Quiz</div>
+            <div class="toggle-desc">Separate from claim button</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="ogAdsAfterQuiz" checked><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Show After Check-in</div>
+            <div class="toggle-desc">Pop up after streak claim</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="ogAdsAfterCheckin"><span class="slider"></span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADS TAB -->
+  <div id="tab-ads" class="tab-content">
+    <div class="grid">
+      <div class="card">
+        <h2>📺 Ad Types</h2>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Banner Ads</div>
+            <div class="toggle-desc">Bottom of screens</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="bannerAdEnabled" checked><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Interstitial Ads</div>
+            <div class="toggle-desc">Full screen between actions</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="interstitialAdEnabled" checked><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Rewarded Ads</div>
+            <div class="toggle-desc">Watch for coins</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="rewardedAdEnabled" checked><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Quiz Ads</div>
+            <div class="toggle-desc">Ads during quiz</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="quizAdEnabled" checked><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>⏱️ Ad Frequency</h2>
+        <div class="field">
+          <label>Interstitial every N quiz completions</label>
+          <div class="range-row">
+            <input type="range" id="interstitialFrequency" min="1" max="5" value="2" oninput="document.getElementById('intFreqVal').textContent='Every '+this.value+' quizzes'">
+            <span class="range-val" id="intFreqVal">Every 2 quizzes</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Rewarded Ad cooldown (minutes)</label>
+          <div class="range-row">
+            <input type="range" id="rewardedCooldown" min="1" max="30" value="5" oninput="document.getElementById('rewCoolVal').textContent=this.value+'min'">
+            <span class="range-val" id="rewCoolVal">5min</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Max Rewarded Ads Per Day</label>
+          <div class="range-row">
+            <input type="range" id="maxRewardedPerDay" min="1" max="20" value="10" oninput="document.getElementById('maxRewVal').textContent=this.value+' ads'">
+            <span class="range-val" id="maxRewVal">10 ads</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Coins Per Rewarded Ad</label>
+          <div class="range-row">
+            <input type="range" id="coinsPerAd" min="5" max="50" value="10" oninput="document.getElementById('coinsAdVal').textContent=this.value+' 🪙'">
+            <span class="range-val" id="coinsAdVal">10 🪙</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-full">
+        <h2>🔑 Ad Unit IDs</h2>
+        <div class="grid">
+          <div class="field">
+            <label>Banner Home</label>
+            <input type="text" id="bannerHomeAdUnitID" value="ca-app-pub-3940256099942544/2934735716">
+          </div>
+          <div class="field">
+            <label>Banner Quiz</label>
+            <input type="text" id="bannerQuizAdUnitID" value="ca-app-pub-3940256099942544/2934735716">
+          </div>
+          <div class="field">
+            <label>Interstitial</label>
+            <input type="text" id="interstitialAdUnitID" value="ca-app-pub-3940256099942544/4411468910">
+          </div>
+          <div class="field">
+            <label>Rewarded</label>
+            <input type="text" id="rewardedAdUnitID" value="ca-app-pub-3940256099942544/1712485313">
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="preset-btn orange" onclick="setTestAds()">🧪 Test Ad IDs</button>
+          <button class="preset-btn green" onclick="setLiveAds()">✅ Live Ad IDs</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT TAB -->
+  <div id="tab-content" class="tab-content">
+    <div class="grid">
+      <div class="card">
+        <h2>📢 Announcement Banner</h2>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Announcement Enabled</div>
+            <div class="toggle-desc">Banner at top of home screen</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="announcementEnabled"><span class="slider"></span></label>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Announcement Text</label>
+          <textarea id="announcementText" placeholder="Enter announcement..."></textarea>
+        </div>
+        <div class="btn-row">
+          <button class="preset-btn" onclick="setAnn('🔑 New codes just dropped!')">New Codes</button>
+          <button class="preset-btn orange" onclick="setAnn('⚡ Double coins today only!')">Double Coins</button>
+          <button class="preset-btn green" onclick="setAnn('🏆 New quiz questions added!')">New Quiz</button>
+          <button class="preset-btn" onclick="setAnn('🎉 App update available!')">Update Alert</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🧠 Quiz Settings</h2>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Quiz Enabled</div>
+            <div class="toggle-desc">Enable/disable quiz tab</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="quizEnabled" checked><span class="slider"></span></label>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Questions Per Session</label>
+          <div class="range-row">
+            <input type="range" id="questionsPerQuiz" min="3" max="15" value="5" oninput="document.getElementById('qVal').textContent=this.value+' questions'">
+            <span class="range-val" id="qVal">5 questions</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Timer Per Question</label>
+          <div class="range-row">
+            <input type="range" id="quizTimer" min="5" max="30" value="15" oninput="document.getElementById('qtVal').textContent=this.value+'s'">
+            <span class="range-val" id="qtVal">15s</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Coins Per Correct Answer</label>
+          <div class="range-row">
+            <input type="range" id="coinsPerAnswer" min="5" max="50" value="20" oninput="document.getElementById('caVal').textContent=this.value+' 🪙'">
+            <span class="range-val" id="caVal">20 🪙</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP TAB -->
+  <div id="tab-app" class="tab-content">
+    <div class="grid">
+      <div class="card">
+        <h2>⚙️ App Control</h2>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Maintenance Mode</div>
+            <div class="toggle-desc">Shows maintenance to users</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="maintenanceMode"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Force Update</div>
+            <div class="toggle-desc">Forces users to update</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="forceUpdate"><span class="slider"></span></label>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Minimum App Version</label>
+          <input type="text" id="minVersion" value="1.0.0">
+        </div>
+        <div class="btn-row">
+          <button class="preset-btn red" onclick="document.getElementById('maintenanceMode').checked=true">🔴 Enable Maintenance</button>
+          <button class="preset-btn green" onclick="document.getElementById('maintenanceMode').checked=false">✅ Disable Maintenance</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🪙 Coins Settings</h2>
+        <div class="field">
+          <label>Daily Check-in Coins (Day 1)</label>
+          <div class="range-row">
+            <input type="range" id="checkinCoinsDay1" min="5" max="50" value="10" oninput="document.getElementById('d1Val').textContent=this.value+' 🪙'">
+            <span class="range-val" id="d1Val">10 🪙</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Daily Check-in Coins (Day 7)</label>
+          <div class="range-row">
+            <input type="range" id="checkinCoinsDay7" min="50" max="500" value="100" oninput="document.getElementById('d7Val').textContent=this.value+' 🪙'">
+            <span class="range-val" id="d7Val">100 🪙</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Daily Check-in Coins (Day 30)</label>
+          <div class="range-row">
+            <input type="range" id="checkinCoinsDay30" min="500" max="5000" value="1000" oninput="document.getElementById('d30Val').textContent=this.value+' 🪙'">
+            <span class="range-val" id="d30Val">1000 🪙</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Invite Friend Reward</label>
+          <div class="range-row">
+            <input type="range" id="inviteReward" min="10" max="500" value="50" oninput="document.getElementById('invVal').textContent=this.value+' 🪙'">
+            <span class="range-val" id="invVal">50 🪙</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREVIEW TAB -->
+  <div id="tab-preview" class="tab-content">
+    <div class="card card-full">
+      <h2>👁️ Config JSON Preview</h2>
+      <p style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:8px;">Upload this file to your server at rovault.xyz/rovault-config.json</p>
+      <div class="json-preview" id="jsonPreview"></div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="preset-btn" onclick="updatePreview()">🔄 Refresh</button>
+        <button class="preset-btn green" onclick="copyJSON()">📋 Copy JSON</button>
+        <button class="preset-btn" onclick="downloadConfig()">⬇️ Download JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="status" class="status"></div>
+</div>
+
+<script>
+function showTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name === 'preview') updatePreview();
+}
+
+function setAnn(text) {
+  document.getElementById('announcementText').value = text;
+  document.getElementById('announcementEnabled').checked = true;
+}
+
+function setTestAds() {
+  document.getElementById('bannerHomeAdUnitID').value = 'ca-app-pub-3940256099942544/2934735716';
+  document.getElementById('bannerQuizAdUnitID').value = 'ca-app-pub-3940256099942544/2934735716';
+  document.getElementById('interstitialAdUnitID').value = 'ca-app-pub-3940256099942544/4411468910';
+  document.getElementById('rewardedAdUnitID').value = 'ca-app-pub-3940256099942544/1712485313';
+}
+
+function setLiveAds() {
+  document.getElementById('bannerHomeAdUnitID').value = 'YOUR_LIVE_BANNER_ID';
+  document.getElementById('bannerQuizAdUnitID').value = 'YOUR_LIVE_BANNER_QUIZ_ID';
+  document.getElementById('interstitialAdUnitID').value = 'YOUR_LIVE_INTERSTITIAL_ID';
+  document.getElementById('rewardedAdUnitID').value = 'YOUR_LIVE_REWARDED_ID';
+}
+
+function getConfig() {
+  return {
+    claimButtonURL: document.getElementById('claimButtonURL').value,
+    claimButtonEnabled: document.getElementById('claimButtonEnabled').checked,
+    claimButtonText: document.getElementById('claimButtonText').value,
+    claimButtonScreen: document.getElementById('claimButtonScreen').value,
+    bannerAdEnabled: document.getElementById('bannerAdEnabled').checked,
+    interstitialAdEnabled: document.getElementById('interstitialAdEnabled').checked,
+    rewardedAdEnabled: document.getElementById('rewardedAdEnabled').checked,
+    quizAdEnabled: document.getElementById('quizAdEnabled').checked,
+    quizEnabled: document.getElementById('quizEnabled').checked,
+    interstitialFrequency: parseInt(document.getElementById('interstitialFrequency').value),
+    rewardedCooldown: parseInt(document.getElementById('rewardedCooldown').value),
+    maxRewardedPerDay: parseInt(document.getElementById('maxRewardedPerDay').value),
+    coinsPerAd: parseInt(document.getElementById('coinsPerAd').value),
+    questionsPerQuiz: parseInt(document.getElementById('questionsPerQuiz').value),
+    quizTimer: parseInt(document.getElementById('quizTimer').value),
+    coinsPerAnswer: parseInt(document.getElementById('coinsPerAnswer').value),
+    maintenanceMode: document.getElementById('maintenanceMode').checked,
+    forceUpdate: document.getElementById('forceUpdate').checked,
+    minVersion: document.getElementById('minVersion').value,
+    announcementEnabled: document.getElementById('announcementEnabled').checked,
+    announcementText: document.getElementById('announcementText').value,
+    bannerHomeAdUnitID: document.getElementById('bannerHomeAdUnitID').value,
+    bannerQuizAdUnitID: document.getElementById('bannerQuizAdUnitID').value,
+    interstitialAdUnitID: document.getElementById('interstitialAdUnitID').value,
+    rewardedAdUnitID: document.getElementById('rewardedAdUnitID').value,
+    ogAdsURL: document.getElementById('ogAdsURL').value,
+    ogAdsEnabled: document.getElementById('ogAdsEnabled').checked,
+    ogAdsAfterQuiz: document.getElementById('ogAdsAfterQuiz').checked,
+    ogAdsAfterCheckin: document.getElementById('ogAdsAfterCheckin').checked,
+    checkinCoinsDay1: parseInt(document.getElementById('checkinCoinsDay1').value),
+    checkinCoinsDay7: parseInt(document.getElementById('checkinCoinsDay7').value),
+    checkinCoinsDay30: parseInt(document.getElementById('checkinCoinsDay30').value),
+    inviteReward: parseInt(document.getElementById('inviteReward').value),
+  };
+}
+
+function updatePreview() {
+  document.getElementById('jsonPreview').textContent = JSON.stringify(getConfig(), null, 2);
+}
+
+function copyJSON() {
+  navigator.clipboard.writeText(JSON.stringify(getConfig(), null, 2));
+  showStatus('✅ JSON copied!', 'success');
+}
+
+function downloadConfig() {
+  const blob = new Blob([JSON.stringify(getConfig(), null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'rovault-config.json';
+  a.click();
+}
+
+function saveConfig() {
+  downloadConfig();
+  document.getElementById('lastSaved').textContent = 'Downloaded at ' + new Date().toLocaleTimeString();
+  showStatus('✅ Downloaded! Upload rovault-config.json to your server public_html/rovault.xyz folder.', 'success');
+}
+
+function showStatus(msg, type) {
+  const s = document.getElementById('status');
+  s.className = 'status ' + type;
+  s.textContent = msg;
+  setTimeout(() => s.className = 'status', 5000);
+}
+</script>
+</body>
+</html>

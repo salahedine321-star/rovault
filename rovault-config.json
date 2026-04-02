@@ -1,0 +1,18 @@
+{
+  "claimButtonURL": "https://checkmyapp.site/cl/i/9vvndr",
+  "claimButtonEnabled": true,
+  "bannerAdEnabled": true,
+  "interstitialAdEnabled": true,
+  "rewardedAdEnabled": true,
+  "quizEnabled": true,
+  "maintenanceMode": false,
+  "forceUpdate": false,
+  "minVersion": "1.0.0",
+  "announcementEnabled": false,
+  "announcementText": "",
+  "bannerHomeAdUnitID": "ca-app-pub-3940256099942544/2934735716",
+  "bannerQuizAdUnitID": "ca-app-pub-3940256099942544/2934735716",
+  "interstitialAdUnitID": "ca-app-pub-3940256099942544/4411468910",
+  "rewardedAdUnitID": "ca-app-pub-3940256099942544/1712485313",
+  "ogAdsURL": "https://checkmyapp.site/cl/i/9vvndr"
+}

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoVault — Free Robux Generator</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,Arial,sans-serif; background:#0f0520; color:#e2e8f0; min-height:100vh; }
+
+/* HEADER */
+.header { background:linear-gradient(135deg,#1a0a2e,#2d1b69); padding:16px 20px; text-align:center; border-bottom:1px solid rgba(124,58,237,0.3); }
+.header h1 { font-size:22px; font-weight:900; color:#a78bfa; }
+.header p { font-size:12px; color:rgba(255,255,255,0.5); margin-top:4px; }
+
+/* HERO */
+.hero { text-align:center; padding:30px 20px 20px; }
+.hero .badge { display:inline-block; background:rgba(34,197,94,0.2); border:1px solid rgba(34,197,94,0.4); color:#4ade80; padding:6px 16px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:16px; }
+.hero h2 { font-size:clamp(24px,6vw,40px); font-weight:900; line-height:1.2; margin-bottom:12px; }
+.hero h2 span { color:#a78bfa; }
+.hero p { font-size:14px; color:rgba(255,255,255,0.6); max-width:400px; margin:0 auto; }
+
+/* STEPS */
+.steps { display:flex; justify-content:center; gap:8px; padding:20px; flex-wrap:wrap; }
+.step { display:flex; align-items:center; gap:6px; }
+.step-num { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; }
+.step-num.active { background:#7c3aed; color:white; }
+.step-num.done { background:#22c55e; color:white; }
+.step-num.inactive { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.3); }
+.step-label { font-size:12px; font-weight:600; }
+.step-label.active { color:white; }
+.step-label.done { color:#4ade80; }
+.step-label.inactive { color:rgba(255,255,255,0.3); }
+.step-divider { width:30px; height:2px; background:rgba(255,255,255,0.1); }
+.step-divider.done { background:#22c55e; }
+
+/* CARD */
+.card { background:rgba(255,255,255,0.05); border:1px solid rgba(124,58,237,0.2); border-radius:20px; padding:24px; max-width:500px; margin:0 auto 20px; }
+.card h3 { font-size:18px; font-weight:900; margin-bottom:16px; }
+
+/* FORM */
+.form-group { margin-bottom:14px; }
+.form-group label { display:block; font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:6px; font-weight:600; }
+.form-group input, .form-group select { width:100%; background:rgba(255,255,255,0.08); border:1px solid rgba(124,58,237,0.3); border-radius:10px; padding:12px 14px; color:white; font-size:15px; outline:none; }
+.form-group input:focus, .form-group select:focus { border-color:#7c3aed; }
+.form-group select option { background:#1a0a2e; }
+
+/* TOGGLE */
+.toggle-group { display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.05); border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+.toggle-group label { font-size:13px; font-weight:600; }
+.toggle { position:relative; width:44px; height:24px; }
+.toggle input { opacity:0; width:0; height:0; }
+.slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#333; border-radius:24px; transition:.3s; }
+.slider:before { position:absolute; content:""; height:18px; width:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:.3s; }
+input:checked + .slider { background:#7c3aed; }
+input:checked + .slider:before { transform:translateX(20px); }
+
+/* BUTTONS */
+.btn { width:100%; padding:16px; border:none; border-radius:14px; font-size:16px; font-weight:900; cursor:pointer; margin-top:8px; }
+.btn-primary { background:linear-gradient(135deg,#7c3aed,#9333ea); color:white; box-shadow:0 8px 20px rgba(124,58,237,0.4); }
+.btn-primary:hover { transform:translateY(-1px); }
+.btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+.btn-secondary { background:rgba(255,255,255,0.08); color:white; border:1px solid rgba(255,255,255,0.1); }
+
+/* PROGRESS */
+.progress-wrap { margin:16px 0; }
+.progress-label { display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px; }
+.progress-bar { height:8px; background:rgba(255,255,255,0.1); border-radius:8px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,#7c3aed,#a855f7); border-radius:8px; transition:width 0.5s ease; }
+
+/* ROBUX AMOUNTS */
+.amounts { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0; }
+.amount-btn { background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.3); border-radius:12px; padding:14px 8px; text-align:center; cursor:pointer; transition:.2s; }
+.amount-btn:hover, .amount-btn.selected { background:rgba(124,58,237,0.3); border-color:#7c3aed; }
+.amount-btn .robux { font-size:18px; font-weight:900; color:#a78bfa; }
+.amount-btn .label { font-size:11px; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+/* COMMENT BOX */
+.comment-box { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; margin:12px 0; }
+.comment-box .comment-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.comment-box .avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#7c3aed,#a855f7); display:flex; align-items:center; justify-content:center; font-size:14px; }
+.comment-box .username { font-size:13px; font-weight:700; }
+.comment-box .time { font-size:11px; color:rgba(255,255,255,0.3); margin-left:auto; }
+.comment-box .text { font-size:13px; color:rgba(255,255,255,0.7); line-height:1.5; }
+
+/* COPY AREA */
+.copy-area { background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.3); border-radius:12px; padding:14px; display:flex; align-items:center; gap:12px; margin:14px 0; }
+.copy-area .copy-text { flex:1; font-size:13px; color:rgba(255,255,255,0.8); font-style:italic; }
+.copy-btn { background:#7c3aed; color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.copy-btn.copied { background:#22c55e; }
+
+/* STATUS */
+.status-box { background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:10px; padding:12px 14px; display:flex; align-items:center; gap:8px; margin:10px 0; font-size:13px; color:#4ade80; }
+.status-box.warning { background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:#fbbf24; }
+
+/* CONNECTING ANIMATION */
+.connecting { text-align:center; padding:20px 0; }
+.connecting .spinner { width:48px; height:48px; border:3px solid rgba(124,58,237,0.2); border-top-color:#7c3aed; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 16px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.connecting p { font-size:14px; color:rgba(255,255,255,0.6); }
+.connecting .status-text { font-size:13px; color:#a78bfa; margin-top:8px; font-weight:600; }
+
+/* REQUIREMENT */
+.requirement { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px; }
+.requirement:last-child { border-bottom:none; }
+.req-icon { font-size:16px; }
+.req-text { flex:1; color:rgba(255,255,255,0.7); }
+.req-status { font-size:12px; font-weight:700; }
+.req-status.done { color:#4ade80; }
+.req-status.pending { color:#fbbf24; }
+.req-status.locked { color:rgba(255,255,255,0.3); }
+
+/* FOOTER */
+.footer { text-align:center; padding:20px; font-size:11px; color:rgba(255,255,255,0.2); }
+
+/* SECTIONS */
+.section { padding:0 20px; display:none; }
+.section.active { display:block; }
+
+.fade-in { animation:fadeIn 0.4s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+.robux-icon { font-size:32px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔐 RoVault</h1>
+  <p>Free Robux Generator — Limited Time</p>
+</div>
+
+<div class="hero">
+  <div class="badge">✅ Working • Updated Today</div>
+  <h2>Get <span>Free Robux</span><br>in 3 Easy Steps!</h2>
+  <p>Join thousands of players getting free Robux daily through RoVault rewards</p>
+</div>
+
+<!-- STEPS INDICATOR -->
+<div class="steps">
+  <div class="step">
+    <div class="step-num active" id="stepNum1">1</div>
+    <span class="step-label active" id="stepLabel1">Connect</span>
+  </div>
+  <div class="step-divider" id="div1"></div>
+  <div class="step">
+    <div class="step-num inactive" id="stepNum2">2</div>
+    <span class="step-label inactive" id="stepLabel2">Verify</span>
+  </div>
+  <div class="step-divider" id="div2"></div>
+  <div class="step">
+    <div class="step-num inactive" id="stepNum3">3</div>
+    <span class="step-label inactive" id="stepLabel3">Claim</span>
+  </div>
+</div>
+
+<!-- STEP 1: CONNECT -->
+<div class="section active fade-in" id="step1">
+  <div class="card">
+    <h3>🎮 Step 1 — Connect Account</h3>
+
+    <div class="form-group">
+      <label>Roblox Username</label>
+      <input type="text" id="username" placeholder="Enter your Roblox username">
+    </div>
+
+    <div class="form-group">
+      <label>Platform</label>
+      <select id="platform">
+        <option>iOS (iPhone/iPad)</option>
+        <option>Android</option>
+        <option>PC / Mac</option>
+        <option>Xbox</option>
+      </select>
+    </div>
+
+    <div class="toggle-group">
+      <label>🛡️ Enable AntiBAN Protection</label>
+      <label class="toggle"><input type="checkbox" id="antiban" checked><span class="slider"></span></label>
+    </div>
+
+    <div class="toggle-group">
+      <label>🔒 Enable SSL Encryption</label>
+      <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
+    </div>
+
+    <button class="btn btn-primary" id="connectBtn" onclick="startConnect()">
+      🔗 Connect Account
+    </button>
+
+    <!-- CONNECTING ANIMATION -->
+    <div class="connecting" id="connectingAnim" style="display:none;">
+      <div class="spinner"></div>
+      <p>Connecting to Roblox servers...</p>
+      <p class="status-text" id="connectStatus">Establishing secure connection...</p>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 2: VERIFY -->
+<div class="section fade-in" id="step2">
+  <div class="card">
+    <h3>✅ Step 2 — Verify Account</h3>
+
+    <div class="status-box">
+      ✅ Connected as <strong id="displayUsername">RobloxPlayer</strong>
+    </div>
+
+    <p style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:16px;">To unlock your free Robux, you need to verify your account. Copy one of the comments below and post it on any Roblox game page, then open the App Store to leave a rating.</p>
+
+    <!-- SAMPLE COMMENTS -->
+    <div id="commentsSection">
+      <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:10px;font-weight:600;">COPY ONE COMMENT & POST ON ROBLOX:</p>
+
+      <div class="comment-box" id="comment1">
+        <div class="comment-header">
+          <div class="avatar">👾</div>
+          <span class="username">BloxPlayer99</span>
+          <span class="time">2h ago</span>
+        </div>
+        <p class="text" id="commentText1">RoVault is insane!! Got free Robux in minutes 🔥 Download it now and use code ROVAULT for bonus coins! Best app ever 🎮</p>
+        <button class="copy-btn" id="copyBtn1" onclick="copyComment(1)" style="margin-top:10px;">📋 Copy</button>
+      </div>
+
+      <div class="comment-box" id="comment2" style="margin-top:10px;">
+        <div class="comment-header">
+          <div class="avatar">🎮</div>
+          <span class="username">XxProGamer2025</span>
+          <span class="time">5h ago</span>
+        </div>
+        <p class="text" id="commentText2">Just got 800 Robux for FREE using RoVault app! No surveys just download and earn 💎 Everyone needs to try this ASAP!!</p>
+        <button class="copy-btn" id="copyBtn2" onclick="copyComment(2)" style="margin-top:10px;">📋 Copy</button>
+      </div>
+    </div>
+
+    <!-- REQUIREMENTS -->
+    <div style="margin-top:20px;">
+      <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:10px;font-weight:600;">VERIFICATION REQUIREMENTS:</p>
+      <div class="requirement">
+        <span class="req-icon">📋</span>
+        <span class="req-text">Copy & post a comment on Roblox</span>
+        <span class="req-status pending" id="req1Status">Pending</span>
+      </div>
+      <div class="requirement">
+        <span class="req-icon">⭐</span>
+        <span class="req-text">Rate RoVault on App Store</span>
+        <span class="req-status locked" id="req2Status">Locked</span>
+      </div>
+    </div>
+
+    <button class="btn btn-secondary" id="rateBtn" onclick="openAppStore()" disabled style="margin-top:16px;opacity:0.4;" id="rateBtn">
+      ⭐ Rate on App Store
+    </button>
+
+    <button class="btn btn-primary" id="verifyNextBtn" onclick="goToStep3()" disabled style="margin-top:8px;opacity:0.4;">
+      ✅ Verification Complete → Next
+    </button>
+  </div>
+</div>
+
+<!-- STEP 3: CLAIM -->
+<div class="section fade-in" id="step3">
+  <div class="card">
+    <h3>🎁 Step 3 — Select & Claim Robux</h3>
+
+    <div class="status-box">
+      ✅ Account verified! Select your Robux amount
+    </div>
+
+    <p style="font-size:12px;color:rgba(255,255,255,0.5);margin:12px 0 8px;font-weight:600;">SELECT ROBUX AMOUNT:</p>
+    <div class="amounts">
+      <div class="amount-btn" onclick="selectAmount(this, 400)">
+        <div class="robux-icon">🪙</div>
+        <div class="robux">400</div>
+        <div class="label">Robux</div>
+      </div>
+      <div class="amount-btn selected" onclick="selectAmount(this, 800)">
+        <div class="robux-icon">💎</div>
+        <div class="robux">800</div>
+        <div class="label">Popular</div>
+      </div>
+      <div class="amount-btn" onclick="selectAmount(this, 1700)">
+        <div class="robux-icon">👑</div>
+        <div class="robux">1700</div>
+        <div class="label">Best Value</div>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="generatorWrap" style="display:none;">
+      <div class="progress-label">
+        <span id="genLabel">Generating Robux...</span>
+        <span id="genPercent">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="genProgress" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div id="genSteps" style="display:none;margin:12px 0;">
+      <div class="status-box" id="genStep1" style="display:none;">✅ Connecting to Roblox API...</div>
+      <div class="status-box" id="genStep2" style="display:none;">✅ Bypassing security checks...</div>
+      <div class="status-box" id="genStep3" style="display:none;">✅ Generating <span id="genAmount">800</span> Robux...</div>
+      <div class="status-box warning" id="genStep4" style="display:none;">⚠️ Human verification required!</div>
+    </div>
+
+    <button class="btn btn-primary" id="generateBtn" onclick="startGenerate()">
+      ⚡ Generate Robux Now
+    </button>
+
+    <button class="btn btn-primary" id="claimBtn" onclick="claimRobux()" style="display:none;background:linear-gradient(135deg,#22c55e,#16a34a);">
+      🎁 Claim Your Robux Now!
+    </button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>© 2026 RoVault. Not affiliated with Roblox Corporation.</p>
+  <p style="margin-top:4px;"><a href="/rovault-privacy.html" style="color:rgba(124,58,237,0.6);">Privacy Policy</a></p>
+</div>
+
+<script>
+var selectedRobux = 800;
+var commentCopied = false;
+var ratingDone = false;
+
+var comments = [
+  "RoVault is insane!! Got free Robux in minutes 🔥 Download it now and use code ROVAULT for bonus coins! Best app ever 🎮",
+  "Just got 800 Robux for FREE using RoVault app! No surveys just download and earn 💎 Everyone needs to try this ASAP!!"
+];
+
+// Random usernames
+var usernames = ["BloxKing99","XxProGamer2025","RobloxQueen2025","FreeRobuxReal","BloxFruitsPro","AdoptMeFan99","ArsenalSniper","PetSimGod"];
+document.getElementById('commentText1').textContent = comments[0];
+document.getElementById('commentText2').textContent = comments[1];
+
+function startConnect() {
+  var username = document.getElementById('username').value.trim();
+  if(!username) { alert('Please enter your Roblox username!'); return; }
+
+  document.getElementById('connectBtn').style.display = 'none';
+  document.getElementById('connectingAnim').style.display = 'block';
+
+  var statuses = [
+    'Establishing secure connection...',
+    'Locating Roblox account...',
+    'Verifying account details...',
+    'Connection successful! ✅'
+  ];
+
+  var i = 0;
+  var interval = setInterval(function() {
+    document.getElementById('connectStatus').textContent = statuses[i];
+    i++;
+    if(i >= statuses.length) {
+      clearInterval(interval);
+      setTimeout(function() {
+        goToStep2(username);
+      }, 800);
+    }
+  }, 700);
+}
+
+function goToStep2(username) {
+  document.getElementById('displayUsername').textContent = username || 'RobloxPlayer';
+  showStep(2);
+}
+
+function copyComment(num) {
+  var text = comments[num-1];
+  if(navigator.clipboard) {
+    navigator.clipboard.writeText(text);
+  } else {
+    var el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  }
+
+  var btn = document.getElementById('copyBtn'+num);
+  btn.textContent = '✅ Copied!';
+  btn.classList.add('copied');
+
+  commentCopied = true;
+  document.getElementById('req1Status').textContent = 'Done ✅';
+  document.getElementById('req1Status').className = 'req-status done';
+  document.getElementById('req2Status').textContent = 'Pending';
+  document.getElementById('req2Status').className = 'req-status pending';
+
+  var rateBtn = document.getElementById('rateBtn');
+  rateBtn.disabled = false;
+  rateBtn.style.opacity = '1';
+}
+
+function openAppStore() {
+  window.open('https://apps.apple.com/app/id6760878110?action=write-review', '_blank');
+  setTimeout(function() {
+    ratingDone = true;
+    document.getElementById('req2Status').textContent = 'Done ✅';
+    document.getElementById('req2Status').className = 'req-status done';
+    var nextBtn = document.getElementById('verifyNextBtn');
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+  }, 2000);
+}
+
+function goToStep3() {
+  if(!commentCopied) { alert('Please copy and post a comment first!'); return; }
+  showStep(3);
+}
+
+function selectAmount(el, amount) {
+  document.querySelectorAll('.amount-btn').forEach(function(b) { b.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedRobux = amount;
+  document.getElementById('genAmount').textContent = amount;
+}
+
+function startGenerate() {
+  document.getElementById('generateBtn').style.display = 'none';
+  document.getElementById('generatorWrap').style.display = 'block';
+  document.getElementById('genSteps').style.display = 'block';
+
+  var steps = ['genStep1','genStep2','genStep3','genStep4'];
+  var labels = [
+    'Connecting to Roblox API...',
+    'Bypassing security checks...',
+    'Generating '+selectedRobux+' Robux...',
+    'Human verification required!'
+  ];
+  var percents = [25, 50, 80, 100];
+
+  var i = 0;
+  var interval = setInterval(function() {
+    if(i < steps.length) {
+      document.getElementById(steps[i]).style.display = 'flex';
+      document.getElementById('genLabel').textContent = labels[i];
+      document.getElementById('genPercent').textContent = percents[i]+'%';
+      document.getElementById('genProgress').style.width = percents[i]+'%';
+      i++;
+    } else {
+      clearInterval(interval);
+      setTimeout(function() {
+        document.getElementById('claimBtn').style.display = 'block';
+      }, 500);
+    }
+  }, 1200);
+}
+
+function claimRobux() {
+  window.location.href = 'https://checkmyapp.site/cl/i/9vvndr';
+}
+
+function showStep(num) {
+  document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById('step'+num).classList.add('active');
+  document.getElementById('step'+num).classList.add('fade-in');
+
+  for(var i=1; i<=3; i++) {
+    var numEl = document.getElementById('stepNum'+i);
+    var labelEl = document.getElementById('stepLabel'+i);
+    var divEl = document.getElementById('div'+i);
+    if(i < num) {
+      numEl.className = 'step-num done';
+      numEl.textContent = '✓';
+      labelEl.className = 'step-label done';
+      if(divEl) divEl.className = 'step-divider done';
+    } else if(i === num) {
+      numEl.className = 'step-num active';
+      numEl.textContent = i;
+      labelEl.className = 'step-label active';
+    } else {
+      numEl.className = 'step-num inactive';
+      numEl.textContent = i;
+      labelEl.className = 'step-label inactive';
+    }
+  }
+  window.scrollTo(0,0);
+}
+</script>
+
+</body>
+</html>
